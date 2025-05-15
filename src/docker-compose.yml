@@ -1,0 +1,68 @@
+services:
+  nodo1:
+    image: cassandra:4.1
+    container_name: nodo1
+    hostname: nodo1
+    networks:
+      - cassandra_net
+    expose:
+      - "9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=inf325lab1
+      - CASSANDRA_NUM_TOKENS=256
+      - CASSANDRA_SEEDS=nodo1
+      - CASSANDRA_BROADCAST_ADDRESS=nodo1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+
+  nodo2:
+    image: cassandra:4.1
+    container_name: nodo2
+    hostname: nodo2
+    networks:
+      - cassandra_net
+    expose:
+      - "9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=inf325lab1
+      - CASSANDRA_NUM_TOKENS=256
+      - CASSANDRA_SEEDS=nodo1
+      - CASSANDRA_BROADCAST_ADDRESS=nodo2
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+    depends_on:
+      - nodo1
+
+  nodo3:
+    image: cassandra:4.1
+    container_name: nodo3
+    hostname: nodo3
+    networks:
+      - cassandra_net
+    expose:
+      - "9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=inf325lab1
+      - CASSANDRA_NUM_TOKENS=256
+      - CASSANDRA_SEEDS=nodo1
+      - CASSANDRA_BROADCAST_ADDRESS=nodo3
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+    depends_on:
+      - nodo1
+
+  haproxy:
+    image: haproxy:2.9
+    container_name: haproxy
+    hostname: haproxy
+    networks:
+      - cassandra_net
+    ports:
+      - "9042:9042"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - nodo1
+      - nodo2
+      - nodo3
+
+networks:
+  cassandra_net:
+    driver: bridge
